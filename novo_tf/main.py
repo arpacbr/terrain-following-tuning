@@ -89,14 +89,18 @@ print(len(moving_var))
 combined_data = []
 combined_timestamp = []
 
+
+counter_data = []
 over_crop_data = []
 over_crop_timestamp = []
 
-threshold = 0.15    #unit: m^2
-time_delay = 5              #unit:samples
+threshold = 0.15       #unit: m^2
 time_counter = 0
-current_over_crop = 0       #current value, iteration dependent variable
+tf_over_crop = 0       #current value, iteration dependent variable
 combined_index = 0
+
+param_tf_delay_rc = 5           #unit:samples
+param_tf_delay_cr = 5           #unit:samples
 
 for mv_element in enumerate(moving_dev_timestamp):
     mv_index , mv_ts = mv_element
@@ -110,19 +114,32 @@ for mv_element in enumerate(moving_dev_timestamp):
             combined_data.append(value)
             combined_timestamp.append(timestamp)
 
-            if(combined_data[combined_index]>threshold):
-                if(time_counter < time_delay):
+            if(tf_over_crop == 0):
+
+                if(combined_data[combined_index]>threshold):
                     time_counter = time_counter + 1
-                else:
-                    current_over_crop = 1
-            else:
-                if(time_counter > 0):
+
+                    if(time_counter >= param_tf_delay_rc):
+                        tf_over_crop = 1
+                        time_counter = 0
+
+                elif(time_counter > 0):
+                        time_counter = time_counter - 1;
+
+            else: #if tf_over_crop == 1
+                if(combined_data[combined_index]<threshold):
+                    time_counter = time_counter + 1
+
+                    if(time_counter >= param_tf_delay_cr):
+                        tf_over_crop = 0
+                        time_counter = 0
+
+                elif(time_counter > 0):
                     time_counter = time_counter - 1
-                else:
-                    current_over_crop = 0
 
             combined_index = combined_index + 1
-            over_crop_data.append(current_over_crop)
+            counter_data.append(time_counter)
+            over_crop_data.append(tf_over_crop)
             over_crop_timestamp.append(mv_ts)
 
             break
